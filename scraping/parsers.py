@@ -1,18 +1,20 @@
-import requests
 import codecs
-from bs4 import BeautifulSoup as BS
 from random import randint
+from bs4 import BeautifulSoup as BS
+import requests
 
-__all__ = ('work', "rabota", 'dou', 'djinni')
+__all__ = ('work', 'rabota', 'dou', 'djinni')
 
-headers = [
-    {'User-Agent': 'Mozilla/5.0 (Windows NT 5.1; rv:47.0) Gecko/20100101 Firefox/47.0',
-        'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'},
-    {'User-Agent': 'Mozilla/5.0 (Windows NT 5.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/49.0.2623.112 Safari/537.36',
-        'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'},
-    {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; rv:53.0) Gecko/20100101 Firefox/53.0',
-        'Accept':'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'}
-    ]
+header = [
+    {'User-Agent': 'Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0',
+     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'},
+    {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.103 Safari/537.36',
+     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'},
+    {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.2704.106 Safari/537.36 OPR/38.0.2220.41',
+     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'},
+    {'User-Agent': 'Mozilla/5.0 (compatible; MSIE 9.0; Windows Phone OS 7.5; Trident/5.0; IEMobile/9.0)',
+     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'},
+]
 
 
 def work(url, city=None, language=None):
@@ -20,13 +22,16 @@ def work(url, city=None, language=None):
     errors = []
     domain = 'https://www.work.ua'
     if url:
-        resp = requests.get(url, headers=headers[randint(0, 2)])
+        resp = requests.get(url, headers=header[randint(0, 3)])
         if resp.status_code == 200:
             soup = BS(resp.content, 'html.parser')
-            main_div = soup.find('div', id='pjax-job-list')
-            if main_div:
-                div_lst = main_div.find_all('div', attrs={'class': 'job-link'})
-                for div in div_lst:
+            main_div = soup.find('div', id='col-md-8 col-left')
+            main_div = soup.find_all('div', attrs={'class': 'job-link'})
+            if main_div: #main_div:
+                #div_lst = main_div.find_all('div', attrs={'class': 'job-link'})
+                #div_lst = soup.find_all('div', attrs={'class': 'job-link'})
+
+                for div in main_div:
                     title = div.find('h2')
                     href = title.a['href']
                     content = div.p.text
@@ -50,7 +55,7 @@ def rabota(url, city=None, language=None):
     errors = []
     domain = 'https://rabota.ua'
     if url:
-        resp = requests.get(url, headers=headers[randint(0, 2)])
+        resp = requests.get(url, headers=header[randint(0, 3)])
         if resp.status_code == 200:
             soup = BS(resp.content, 'html.parser')
             new_jobs = soup.find('div',
@@ -61,22 +66,21 @@ def rabota(url, city=None, language=None):
                 if table:
                     tr_lst = table.find_all('tr', attrs={'id': True})
                     for tr in tr_lst:
-                        div = tr.find('div',  attrs={'class': 'card-body'})
+                        div = tr.find('div', attrs={'class': 'card-body'})
                         if div:
-                            title = div.find('p',
-                                             attrs={'class': 'card-title'})
+                            title = div.find('h2', attrs={'class': 'card-title'})
                             href = title.a['href']
-                            content = div.p.text
+                            content = div.find('div', attrs={'class': 'card-description'}).text
                             company = 'No name'
                             p = div.find('p', attrs={'class': 'company-name'})
                             if p:
                                 company = p.a.text
                             jobs.append({
                                 'title': title.text,
-                                 'url': domain + href,
-                                 'description': content,
-                                 'company': company,
-                                 'city_id': city, 'language_id': language})
+                                'url': domain + href,
+                                'description': content,
+                                'company': company,
+                                'city_id': city, 'language_id': language})
                 else:
                     errors.append({'url': url, 'title': "Table does not exists"})
             else:
@@ -90,9 +94,9 @@ def rabota(url, city=None, language=None):
 def dou(url, city=None, language=None):
     jobs = []
     errors = []
-    # domain = 'https://www.work.ua'
+    # domain = 'https://jobs.dou.ua/'
     if url:
-        resp = requests.get(url, headers=headers[randint(0, 2)])
+        resp = requests.get(url, headers=header[randint(0, 3)])
         if resp.status_code == 200:
             soup = BS(resp.content, 'html.parser')
             main_div = soup.find('div', id='vacancyListId')
@@ -123,30 +127,34 @@ def djinni(url, city=None, language=None):
     errors = []
     domain = 'https://djinni.co'
     if url:
-        resp = requests.get(url, headers=headers[randint(0, 2)])
+        resp = requests.get(url, headers=header[randint(0, 3)])
         if resp.status_code == 200:
             soup = BS(resp.content, 'html.parser')
-            main_ul = soup.find('ul',  attrs={'class': 'list-jobs'})
-            if main_ul:
-                li_lst = main_ul.find_all('li',
-                                          attrs={'class': 'list-jobs__item'})
-                for li in li_lst:
-                    title = li.find('div',
-                                    attrs={'class': 'list-jobs__title'})
+
+            main_section = soup.find('section', attrs={'class': 'jobs-list-wrapper'})
+            if main_section:
+                article_lst = main_section.find_all('article')
+                for article in article_lst:
+
+                    title = article.find('p', attrs={'class': 'title'})
                     href = title.a['href']
-                    cont = li.find('div',
-                                   attrs={'class': 'list-jobs__description'})
-                    content = cont.text
+
                     company = 'No name'
-                    comp = li.find('div',
-                                   attrs={'class': 'list-jobs__details__info'})
+                    comp = article.find('span', attrs={'class': 'company'})
                     if comp:
                         company = comp.text
+
+                    discr = article.find_all('p', attrs={'class': 'svelte-re68m3'})
+                    for result in discr:
+                        if len(result.attrs['class']) == 1:
+                            content = result.text
+
                     jobs.append({'title': title.text, 'url': domain + href,
                                  'description': content, 'company': company,
                                  'city_id': city, 'language_id': language})
+
             else:
-                errors.append({'url': url, 'title': "Div does not exists"})
+                errors.append({'url': url, 'title': "Section does not exists"})
         else:
             errors.append({'url': url, 'title': "Page do not response"})
 
@@ -154,8 +162,15 @@ def djinni(url, city=None, language=None):
 
 
 if __name__ == '__main__':
-    url = 'https://djinni.co/jobs/?location=%D0%9A%D0%B8%D0%B5%D0%B2&primary_keyword=Python'
-    jobs, errors = djinni(url)
+    url = 'https://jobs.dou.ua/vacancies/?city=Киев&category=Python'
+    jobs, errors = dou(url)
     h = codecs.open('work.txt', 'w', 'utf-8')
-    h.write(str(jobs))
+    strr = ''
+    for i in jobs:
+        strr += str(i)
+        strr += '\n'
+    h.write(strr)
+    h.close()
+    h = codecs.open('errors.txt', 'w', 'utf-8')
+    h.write(str(errors))
     h.close()
